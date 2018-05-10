@@ -3,9 +3,7 @@ from pptx import Presentation
 from pptx.chart.data import CategoryChartData
 
 
-class PPT:
-    def __init__(self, file):
-        self.prs = Presentation(file)
+class PPT(Presentation):
 
     def __getitem__(self, item):
         """通过页码、shape编号得到指定slide或shape"""
@@ -37,21 +35,13 @@ class PPT:
                     self.replace_chart_data(shape.chart, value)
 
     @property
-    def layouts(self):
-        return self.prs.slide_layouts
-
-    @property
-    def slides(self):
-        return self.prs.slides
-
-    @property
     def _blank_slide_layout(self):
         """获得空白样式的layout"""
         layout_items_count = [len(layout.placeholders)
-                              for layout in self.layouts]
+                              for layout in self.slide_layouts]
         min_items = min(layout_items_count)
         blank_layout_id = layout_items_count.index(min_items)
-        return self.layouts[blank_layout_id]
+        return self.slide_layouts[blank_layout_id]
 
     @staticmethod
     def replace_text(txFrame, text):
@@ -73,6 +63,7 @@ class PPT:
     def df2chart_data(df):
         """index转换为chart_data的categories，columns转为chart_data的series"""
         chart_data = CategoryChartData()
+        df.fillna('', inplace=True)
         chart_data.categories = df.index.tolist()
         for col in df:
             chart_data.add_series(col, df[col].tolist())
@@ -107,8 +98,8 @@ class PPT:
 
     def analyze_layouts(self, output_file='layouts_analyze.pptx'):
         # 遍历每个版式与占位符
-        for i, layout in enumerate(self.prs.slide_layouts):
-            slide = self.prs.slides.add_slide(layout)
+        for i, layout in enumerate(self.slide_layouts):
+            slide = self.slides.add_slide(layout)
 
             # 将占位符(placeholders)命名为x-x
             for each in slide.placeholders:
@@ -141,6 +132,6 @@ class PPT:
         # 保存
         self.save(output_file)
 
-    def save(self, output_file='ouput.pptx'):
-        self.prs.save(output_file)
-        print(f'[*] {output_file} saved.')
+    def save(self, file='output.pptx'):
+        super().save(file)
+        print(f'[*] {file} saved.')
